@@ -5,55 +5,54 @@
 #define TAMANHO_REGISTRO 100
 #define TAMANHO_BLOCO 512
 
-struct Registro {
+typedef struct {
   char *Nome;
   char *Sobrenome;
-};
+}Registro;
 
-struct Arquivo {
-  FILE *arquivo;
-  int atual;
-  int bloco_atual;
-};
+ typedef FILE* Arquivo;
 
-struct Arquivo CriarArquivo(char *nome) {
-  struct Arquivo a = {fopen(nome, "w+"), 0, 0};
-  if (a.arquivo == NULL) {
+ Arquivo CriarArquivo(char *nome) {
+   Arquivo arquivo= fopen(nome, "w+");
+  if (arquivo == NULL) {
     printf("Problema ao abrir o arquivo");
   }
   char primeiro_bloco[TAMANHO_BLOCO] = {0};
-  fwrite(primeiro_bloco, sizeof(char), TAMANHO_BLOCO, a.arquivo);
-  fflush(a.arquivo);
-  return a;
+  fwrite(primeiro_bloco, sizeof(char), TAMANHO_BLOCO, arquivo);
+  fflush(arquivo);
+  return arquivo;
 }
-void PegarProximoBloco(char bloco[TAMANHO_BLOCO], struct Arquivo *arquivo) {
-  int lidos = fread(bloco, sizeof(char), TAMANHO_BLOCO, arquivo->arquivo);
-  if (lidos < 512) {
+
+void PegarProximoBloco(char bloco[TAMANHO_BLOCO], Arquivo arquivo) {
+  int lidos = fread(bloco, sizeof(char), TAMANHO_BLOCO, arquivo);
+  if (lidos < TAMANHO_BLOCO) { // Deu ruim, não leu 512 bytes, ou seja, não tem um bloco inteiro pra ler
     int i;
     for (i = 0; i < TAMANHO_BLOCO; i++) bloco[i] = 0;
   }
-  fseek(arquivo->arquivo,-lidos,SEEK_CUR);
-  fwrite(bloco,sizeof(char), TAMANHO_BLOCO,arquivo->arquivo);
+  fseek(arquivo,-lidos,SEEK_CUR); 
+  fwrite(bloco,sizeof(char), TAMANHO_BLOCO,arquivo); // Criando bloco novo
+}
+
+void SalvarBloco(char bloco[TAMANHO_BLOCO], Arquivo arquivo) {
+  fseek(arquivo, -TAMANHO_BLOCO, SEEK_CUR); // Volta pra salvar em cima
+  fwrite(bloco, sizeof(char), TAMANHO_BLOCO, arquivo);
 }
 
 int PosicaoParaInsercao(char bloco[TAMANHO_BLOCO]) {
   int i = 0;
   for (i = 0; i + TAMANHO_REGISTRO < TAMANHO_BLOCO; i += TAMANHO_REGISTRO) {
-    if (bloco[i] == '*' || bloco[i] == '\0') return i;
+    if (bloco[i] == '*' || bloco[i] == '\0') return i; // * é o caractere pra marcar registros invalidos
   }
   return -1;
 }
-void SalvarBloco(char bloco[TAMANHO_BLOCO], struct Arquivo *arquivo) {
-  fseek(arquivo->arquivo, -TAMANHO_BLOCO, SEEK_CUR);
-  fwrite(bloco, sizeof(char), TAMANHO_BLOCO, arquivo->arquivo);
-}
-int InserirRegistro(struct Arquivo *arquivo, struct Registro r) {
+
+int InserirRegistro(Arquivo arquivo, Registro r) {
   int res = 0;
-  int tamanho_total = strlen(r.Nome) + strlen(r.Sobrenome) + 1;
+  int tamanho_total = strlen(r.Nome) + strlen(r.Sobrenome) + 1; //o +1 é por causa do |, que separa os campos
   if (tamanho_total > TAMANHO_REGISTRO - 2) {
     return res;
   }
-  rewind(arquivo->arquivo);
+  rewind(arquivo);
 
   char bloco[TAMANHO_BLOCO] = {0};
   int posicao = -1;
@@ -74,22 +73,22 @@ int InserirRegistro(struct Arquivo *arquivo, struct Registro r) {
 }
 
 int main() {
-  struct Arquivo b = CriarArquivo("alaao");
-  if (b.arquivo == NULL) {
-    printf("erro");
+  Arquivo a = CriarArquivo("alaao");
+  if (a == NULL) {
+    printf("Erro ao abrir o arquivo");
   }
-  struct Registro a[] = {
+  Registro registros[] = {
       {"Joao Pedro", "Sao gregorio Silva"}, {"Kaua", "Ferreira Costa"},
       {"Lara", "Goncalves Cavalcanti"},     {"Vitória", "Gomes Barros"},
       {"Kaua", "Ferreira Costa"},           {"Lara", "Goncalves Cavalcanti"},
       {"Vitória", "Gomes Barros"}};
   int i = 0;
-  int sizeA = sizeof(a) / sizeof(a[0]);
+  int sizeA = sizeof(registros) / sizeof(registros[0]);
   for (i = 0; i < sizeA; i++) {
-    if (!InserirRegistro(&b, a[i])) {
+    if (!InserirRegistro(a, registros[i])) {
       printf("Erro ao inserir");
     }
   }
-  fclose(b.arquivo);
+  fclose(a);
   return 0;
 }
