@@ -11,30 +11,29 @@ typedef struct {
 } Registro;
 
 typedef FILE *Arquivo;
-
+void CriarNovoBloco(Arquivo arquivo) {
+  char bloco[TAMANHO_BLOCO] = {0};
+  fwrite(bloco, sizeof(char), TAMANHO_BLOCO, arquivo);  // Criando bloco novo
+  fflush(arquivo);
+}
 Arquivo CriarArquivo(char *nome) {
   Arquivo arquivo = fopen(nome, "w+");
   if (arquivo == NULL) {
     printf("Problema ao abrir o arquivo");
   } else {
-  CriarNovoBloco(0);
-}
+    CriarNovoBloco(arquivo);
+  }
   return arquivo;
 }
 
-void CriarNovoBloco(int offset){
-  char bloco[TAMANHO_BLOCO] = {0};
-  int i;
-  fseek(arquivo, offset, SEEK_CUR);
-  fwrite(bloco, sizeof(char), TAMANHO_BLOCO, arquivo);  // Criando bloco novo
-  fflush(arquivo);
-
-}
 void PegarProximoBloco(char bloco[TAMANHO_BLOCO], Arquivo arquivo) {
   int lidos = fread(bloco, sizeof(char), TAMANHO_BLOCO, arquivo);
   if (lidos < TAMANHO_BLOCO) {  // Deu ruim, não leu 512 bytes, ou seja, não tem
                                 // um bloco inteiro pra ler
-    CriarNovoBloco(-lidos);
+    fseek(arquivo, -lidos, SEEK_CUR);
+    int i;
+    for (i = 0; i < TAMANHO_BLOCO; i++) bloco[i] = 0;
+    CriarNovoBloco(arquivo);
   }
 }
 
@@ -47,15 +46,17 @@ void SalvarBloco(char bloco[TAMANHO_BLOCO], Arquivo arquivo) {
 int PosicaoParaInsercao(char bloco[TAMANHO_BLOCO]) {
   int i = 0;
   for (i = 0; i + TAMANHO_REGISTRO < TAMANHO_BLOCO; i += TAMANHO_REGISTRO) {
-    if (bloco[i] == '*' || bloco[i] == '\0')
-      return i;  // * é o caractere pra marcar registros invalidos
+    if (bloco[i] == '*' || bloco[i] == 0) { // * é o caractere pra marcar registros invalidos
+      return i;  
+    }
   }
   return -1;
 }
 
 int InserirRegistro(Arquivo arquivo, Registro r) {
   int resultado = 0;
-  int tamanho_total = strlen(r.Nome) + strlen(r.Sobrenome) + 1;  // o +1 é por causa do |, que separa os campos
+  int tamanho_total = strlen(r.Nome) + strlen(r.Sobrenome) +
+                      1;  // o +1 é por causa do |, que separa os campos
   if (tamanho_total > TAMANHO_REGISTRO) {
     return resultado;
   }
