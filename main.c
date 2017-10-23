@@ -76,10 +76,44 @@ int InserirRegistro(Arquivo arquivo, Registro r) {
   for (i = 0; i < tamanho_total; i++) {
     bloco[posicao + i] = buffer[i];
   }
+  for (; i < TAMANHO_REGISTRO; i++) {
+    bloco[posicao + i] = '0';
+  }
   resultado = 1;
   SalvarBloco(bloco, arquivo);
   return resultado;
 }
+
+int BuscaRegistro(Arquivo arquivo, char chave[TAMANHO_REGISTRO]) {
+  rewind(arquivo);
+  char leitura;
+  int i, j, k;
+  char bloco[TAMANHO_BLOCO];
+  int achou = 0;
+  fread(bloco, sizeof(char), TAMANHO_BLOCO, arquivo); //Lê o bloco já que a função PegaproximoBloco é uma fodida
+  while(bloco[0] != EOF) { //Eu imagino que se não tiver mais bloco pra lê ele vai lê EOF
+    for(i = 0; i < TAMANHO_BLOCO; i += TAMANHO_REGISTRO) {
+      j = i;
+      k = 0;
+      while(bloco[j] == chave[k] && chave[k] != '\0') { //vai comparar o inicio de cada registro com a chave
+        j++;k++;                                        //até o final da chave ou até deixarem de ser iguais
+      }
+      if(chave[k] == '\0') { //Se chegou no fim da chave, é um match, deve retornar na posição i do arquivo
+          achou = 1;
+          break; //Esse break deveria sair do for de ler registros
+      }
+      fread(bloco, sizeof(char), TAMANHO_BLOCO, arquivo); //Como não encontrou até então, pega o próximo bloco
+    }
+    if (achou == 1) { //se já achou, pode sair do while de ler blocos
+      break;
+    }
+    fread(bloco, sizeof(char), TAMANHO_BLOCO, arquivo); //Como não encontrou até então, pega o próximo bloco
+  }
+  return achou; //Pra saber se encontrou e está na posição ou não
+}
+
+
+
 
 int main() {
   Arquivo a = CriarArquivo("dados.txt");
@@ -93,7 +127,7 @@ int main() {
       {"Vitória", "Gomes Barros"}};
   int i = 0;
   int sizeA = sizeof(registros) / sizeof(registros[0]);
-  for (i = 0; i < 10000; i++) {
+  for (i = 0; i < 10; i++) {
     if (!InserirRegistro(a, registros[i % 6])) {
       printf("Erro ao inserir");
     }
