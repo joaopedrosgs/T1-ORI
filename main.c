@@ -102,7 +102,6 @@ int BuscaRegistro(Arquivo arquivo, char chave[TAMANHO_REGISTRO]) {
           achou = 1;
           break; //Esse break deveria sair do for de ler registros
       }
-      fread(bloco, sizeof(char), TAMANHO_BLOCO, arquivo); //Como não encontrou até então, pega o próximo bloco
     }
     if (achou == 1) { //se já achou, pode sair do while de ler blocos
       break;
