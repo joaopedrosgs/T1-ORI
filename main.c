@@ -147,6 +147,31 @@ Registro BuscaRegistro(Arquivo arquivo, char *chave) {
     return retorno;
 }
 
+int RemoverRegistro(Arquivo arquivo, char* chave) {
+  rewind(arquivo);
+  int local = EncontrarIndice(arquivo, chave, (int) strlen(chave));
+  if(local<0) {
+    return 0;
+  }
+  int numero_bloco = (local / TAMANHO_BLOCO) * TAMANHO_BLOCO;
+  fseek(arquivo, numero_bloco, SEEK_SET);
+  char bloco[TAMANHO_BLOCO] = {0};
+  PegarProximoBloco(bloco, arquivo);
+  bloco[local%TAMANHO_BLOCO] = '*';
+  SalvarBloco(bloco, arquivo);
+  return 1;
+}
+
+int CompactarArquivo(){
+/* TODO
+ Algoritmo:
+ 1) Procurar quantos registros precisam ser removidos e guarde em N
+ 2) Remover os ultimos N registros não removidos do arquivo
+ 3) Utilizar o InserirRegistro nesses N registros
+ obs: o InserirRegistro já insere em cima de registros já removidos.
+*/
+}
+
 int main() {
 
     Arquivo a = CriarArquivo("dados.txt");
