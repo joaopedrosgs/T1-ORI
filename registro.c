@@ -25,7 +25,7 @@ int InserirRegistro(FILE *arquivo, Registro r) {
     int resultado = 0;
     int tamanho_total = strlen(r.Nome) + strlen(r.Sobrenome) +
                         1; // o +1 é por causa do |, que separa os campos
-    if (tamanho_total > TAMANHO_REGISTRO) {
+    if (tamanho_total > TAMANHO_REGISTRO || tamanho_total<=1) {
         return resultado;
     }
 
@@ -91,7 +91,7 @@ Registro DecodificarRegistro(char texto[TAMANHO_REGISTRO]) {
             tamanho_sobrenome++;
         }
     }
-    registro.Nome = malloc(sizeof(char) * tamanho_nome);
+    registro.Nome = malloc(sizeof(char) * tamanho_nome); // é uma boa ideia alocar dinamicamente isso?
     registro.Sobrenome = malloc(sizeof(char) * tamanho_sobrenome);
     memcpy(registro.Nome, texto, sizeof(char) * tamanho_nome);
     memcpy(registro.Sobrenome, texto + (sizeof(char) * (tamanho_nome + 1)),
@@ -119,7 +119,7 @@ Registro RemoverRegistro(Arquivo arquivo, char *chave) {
     rewind(arquivo);
     Registro registro;
     int local = EncontrarIndice(arquivo, chave, (int) strlen(chave));
-    if (local > 0) {
+    if (local >= 0) {
         int numero_bloco = (local / TAMANHO_BLOCO) * TAMANHO_BLOCO;
         fseek(arquivo, numero_bloco, SEEK_SET);
         char bloco[TAMANHO_BLOCO] = {0};

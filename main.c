@@ -1,13 +1,9 @@
-
 #include "shared.c"
 #include <stdio.h>
-#include <memory.h>
 #include <stdlib.h>
-#include "bloco.c"
 #include "arquivo.c"
 #include "registro.c"
-
-
+#include "bloco.c";
 
 
 int main() {
@@ -33,6 +29,12 @@ int main() {
     char *chave = "Kaua";
     Registro x = BuscaRegistro(a, chave);
     printf("%s", x.Sobrenome);
-    fclose(a);
+    free(x.Nome);
+    free(x.Sobrenome);
+    char *chave2 = "Joao Pedro";
+    x = RemoverRegistro(a, chave2);
+    printf("%s", x.Sobrenome);
+    FecharArquivo(a);
     return 0;
 }
+
