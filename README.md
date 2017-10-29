@@ -32,7 +32,7 @@
 **PegarProximoBloco**
 - Retorno: Inteiro.
 - Argumentos: bloco = vetor de char do tamanho TAMANHO_BLOCO; arquivo =  ponteiro para FILE.
-- Processo: Verifica se é possível ler um número TAMANHO_BLOCO de bytes na atual posição do ponteiro em arquivo, se não for possível ler, o bloco é criado no arquivo. Retorna 0 se o bloco não existia e 512 se já existia.
+- Processo: Tenta ler TAMANHO_BLOCO de caracteres do arquivo, colocando-o no vetor de char que foi passado por referencia, caso contrario, zera este mesmo vetor e retorna o numero de elementos lidos
 
 **SalvarBloco**
 - Retorno: Nenhum.
