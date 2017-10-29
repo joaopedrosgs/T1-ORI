@@ -3,10 +3,10 @@
 //
 
 #include "arquivo.h"
-#include <stdio.h>
 #include "bloco.h"
 #include "registro.h"
 #include "shared.h"
+#include <stdio.h>
 
 FILE *CriarArquivo(char *nome) {
   FILE *arquivo = fopen(nome, "w+");
@@ -32,21 +32,28 @@ void CompactarArquivo(Arquivo arquivo, char *nome_arquivo) {
   rewind(arquivo);
   char bloco[TAMANHO_BLOCO] = {0};
   int n_registro;
-  while (PegarProximoBloco(bloco, arquivo) ==
-         TAMANHO_BLOCO) {  // Enquanto houver blocos para serem lidos
+
+  // Enquanto houver blocos para serem lidos
+  while (PegarProximoBloco(bloco, arquivo) == TAMANHO_BLOCO) {
+
+    // Para cada registro
     for (n_registro = 0; n_registro + TAMANHO_REGISTRO < TAMANHO_BLOCO;
-         n_registro = n_registro + TAMANHO_REGISTRO) {  // Para cada registro
-      if (*(bloco + n_registro) == '*')                 // Se registro invalido
+         n_registro = n_registro + TAMANHO_REGISTRO) {
+
+      // Se registro invalido
+      if (*(bloco + n_registro) == '*') {
         continue;
-      Registro atual = DecodificarRegistro(
-          bloco + n_registro);  // Transforma a string lida em uma struct
+      }
+
+      Registro atual = DecodificarRegistro(bloco + n_registro);
       InserirRegistro(novo, atual);
       RemoverRegistroDaMemoria(atual);
     }
   }
   fclose(arquivo);
   remove(nome_arquivo); // remove o arquivo antigo
-  rename(nome_arquivo_novo, nome_arquivo); // move o arquivo novo para o lugar do antigo
+  rename(nome_arquivo_novo,
+         nome_arquivo); // move o arquivo novo para o lugar do antigo
   arquivo = novo;
 }
 

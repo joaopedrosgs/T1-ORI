@@ -12,8 +12,8 @@
 int PosicaoParaInsercao(char bloco[TAMANHO_BLOCO]) {
   int i = 0;
   for (i = 0; i + TAMANHO_REGISTRO < TAMANHO_BLOCO; i += TAMANHO_REGISTRO) {
-    if (bloco[i] == '*' || // * é o caractere pra marcar registros invalidos
-        bloco[i] == 0) {
+    // * é o caractere pra marcar registros invalidos
+    if (bloco[i] == '*' || bloco[i] == 0) {
       return i;
     }
   }
@@ -22,10 +22,10 @@ int PosicaoParaInsercao(char bloco[TAMANHO_BLOCO]) {
 // CodificarRegistro transforma uma struct Registro em uma string pronta para
 // ser inserida no bloco
 char *CodificarRegistro(Registro r) {
-  int tamanho_total = strlen(r.Nome) + strlen(r.Sobrenome) +
-                      2; // o 2 é por causa do | e do \0, que separa os campos
-  if (tamanho_total > TAMANHO_REGISTRO ||
-      tamanho_total <= 2) { // Retorne falso se é muito grande ou vazio
+  // o 2 é por causa do | e do \0, que separa os campos
+  int tamanho_total = strlen(r.Nome) + strlen(r.Sobrenome) + 2;
+  // Retorne falso se é muito grande ou vazio
+  if (tamanho_total > TAMANHO_REGISTRO || tamanho_total <= 2) {
     return NULL;
   }
   char *buffer = (char *)calloc(tamanho_total, sizeof(char));
@@ -44,8 +44,8 @@ int InserirRegistro(FILE *arquivo, Registro r) {
       // Enquanto não achou uma posicao para inserir no bloco
       int lidos = PegarProximoBloco(bloco, arquivo);
       if (lidos < TAMANHO_BLOCO) {
-        fseek(arquivo, -lidos,
-              SEEK_CUR); // Volta caso tenha lido algo incorreto
+        // Volta caso tenha lido algo incorreto
+        fseek(arquivo, -lidos, SEEK_CUR);
         CriarNovoBloco(arquivo);
       }
       posicao = PosicaoParaInsercao(bloco);
@@ -63,20 +63,25 @@ int InserirRegistro(FILE *arquivo, Registro r) {
 // EncontrarIndice encontra o primeiro espaço vazio para inserir em um bloco
 int EncontrarIndice(Arquivo arquivo, char *chave, int tamanho_chave) {
   rewind(arquivo);
-  if (chave[0] == '*') // Não é possivel encontrar um registro deletado
+  // Não é possivel encontrar um registro deletado
+  if (chave[0] == '*')
     return -1;
   char bloco[TAMANHO_BLOCO] = {0};
   int i = 0, j = 0, lidos, numero_bloco = -1;
   do {
     lidos = PegarProximoBloco(bloco, arquivo);
     numero_bloco++;
+    // Pula de registro em registro
     for (int j = 0; j + TAMANHO_REGISTRO <= TAMANHO_BLOCO;
-         j = j + TAMANHO_REGISTRO) {             // Pula de registro em registro
-      for (i = 0; i <= tamanho_chave + 1; i++) { // enquanto houver chave
+         j = j + TAMANHO_REGISTRO) {
+      // enquanto houver chave
+      for (i = 0; i <= tamanho_chave + 1; i++) {
         if (chave[i] == 0) {
-          return j + (numero_bloco * TAMANHO_BLOCO); // Achou
+          // Achou
+          return j + (numero_bloco * TAMANHO_BLOCO);
         }
-        if (bloco[i + j] != chave[i]) { // Não é o registro procurado
+        // Não é o registro procurado
+        if (bloco[i + j] != chave[i]) {
           break;
         }
       }
@@ -158,7 +163,7 @@ void ListarRegistros(Arquivo arquivo, int imprimir_deletados) {
   while (PegarProximoBloco(bloco, arquivo) == TAMANHO_BLOCO) {
     printf("%d : {", n_bloco);
     for (n_registro = 0; n_registro + TAMANHO_REGISTRO < TAMANHO_BLOCO;
-         n_registro = n_registro + TAMANHO_REGISTRO) {
+         n_registro += TAMANHO_REGISTRO) {
       if ((*(bloco + n_registro) == '*' && !imprimir_deletados) ||
           *(bloco + n_registro) == 0)
         continue;

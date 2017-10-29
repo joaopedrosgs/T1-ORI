@@ -13,9 +13,11 @@ void CriarNovoBloco(FILE *arquivo) {
 //Pega o proximo bloco no arquivo
 int PegarProximoBloco(char bloco[TAMANHO_BLOCO], FILE *arquivo) {
   int lidos = fread(bloco, sizeof(char), TAMANHO_BLOCO, arquivo);
-  if (lidos != TAMANHO_BLOCO) {  // Não conseguiu ler o bloco inteiro
+  // se não conseguiu ler o bloco inteiro
+  if (lidos != TAMANHO_BLOCO) { 
     int i;
-    for (i = 0; i < TAMANHO_BLOCO; i++)  // Zera o bloco por conveniencia
+    // Zera o bloco por conveniencia
+    for (i = 0; i < TAMANHO_BLOCO; i++)
       bloco[i] = 0;
   }
   return lidos;
