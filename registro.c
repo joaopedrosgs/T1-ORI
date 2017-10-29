@@ -22,7 +22,7 @@ int PosicaoParaInsercao(char bloco[TAMANHO_BLOCO]) {
 // CodificarRegistro transforma uma struct Registro em uma string pronta para
 // ser inserida no bloco
 char *CodificarRegistro(Registro r) {
-  // o 2 é por causa do | e do \0, que separa os campos
+  // o 2 é por causa do | e do \0, que separa os campos do registro
   int tamanho_total = strlen(r.Nome) + strlen(r.Sobrenome) + 2;
   // Retorne falso se é muito grande ou vazio
   if (tamanho_total > TAMANHO_REGISTRO || tamanho_total <= 2) {
