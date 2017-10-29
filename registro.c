@@ -2,154 +2,173 @@
 // Created by pedro on 24/10/17.
 //
 
-#include <stdio.h>
-#include <memory.h>
-#include <stdlib.h>
 #include "registro.h"
 #include "bloco.h"
-
+#include <memory.h>
+#include <stdio.h>
+#include <stdlib.h>
+// PosicaoParaInsercao procura uma posição valida para inserir informação em um
+// bloco
 int PosicaoParaInsercao(char bloco[TAMANHO_BLOCO]) {
-    int i = 0;
-    for (i = 0; i + TAMANHO_REGISTRO < TAMANHO_BLOCO; i += TAMANHO_REGISTRO) {
-        if (bloco[i] == '*' ||
-            bloco[i] == 0) { // * é o caractere pra marcar registros invalidos
-            return i;
-        }
+  int i = 0;
+  for (i = 0; i + TAMANHO_REGISTRO < TAMANHO_BLOCO; i += TAMANHO_REGISTRO) {
+    if (bloco[i] == '*' || // * é o caractere pra marcar registros invalidos
+        bloco[i] == 0) {
+      return i;
     }
-    return -1;
+  }
+  return -1;
+}
+// CodificarRegistro transforma uma struct Registro em uma string pronta para
+// ser inserida no bloco
+char *CodificarRegistro(Registro r) {
+  int tamanho_total = strlen(r.Nome) + strlen(r.Sobrenome) +
+                      2; // o 2 é por causa do | e do \0, que separa os campos
+  if (tamanho_total > TAMANHO_REGISTRO ||
+      tamanho_total <= 2) { // Retorne falso se é muito grande ou vazio
+    return NULL;
+  }
+  char *buffer = (char *)calloc(tamanho_total, sizeof(char));
+  snprintf(buffer, tamanho_total, "%s|%s", r.Nome, r.Sobrenome);
+  return buffer;
 }
 
 int InserirRegistro(FILE *arquivo, Registro r) {
-    int resultado = 0;
-    int tamanho_total = strlen(r.Nome) + strlen(r.Sobrenome) +
-                        1; // o +1 é por causa do |, que separa os campos
-    if (tamanho_total > TAMANHO_REGISTRO || tamanho_total <= 1) {
-        return resultado;
-    }
-
+  int resultado = 0;
+  char *buffer = CodificarRegistro(r);
+  if (buffer != NULL) {
     rewind(arquivo);
-
     char bloco[TAMANHO_BLOCO] = {0};
     int posicao = -1;
-    while (posicao < 0) {
-        int lidos = PegarProximoBloco(bloco, arquivo);
-        if (lidos < TAMANHO_BLOCO) {
-            fseek(arquivo, -lidos, SEEK_CUR);
-            CriarNovoBloco(arquivo);
-        }
-        posicao = PosicaoParaInsercao(bloco);
+    while (posicao == -1) {
+      // Enquanto não achou uma posicao para inserir no bloco
+      int lidos = PegarProximoBloco(bloco, arquivo);
+      if (lidos < TAMANHO_BLOCO) {
+        fseek(arquivo, -lidos,
+              SEEK_CUR); // Volta caso tenha lido algo incorreto
+        CriarNovoBloco(arquivo);
+      }
+      posicao = PosicaoParaInsercao(bloco);
     };
 
-    char buffer[tamanho_total + 1];
-    snprintf(buffer, sizeof buffer, "%s|%s", r.Nome, r.Sobrenome);
-    int i = 0;
-    for (i = 0; i < tamanho_total; i++) {
-        bloco[posicao + i] = buffer[i];
-    }
+    memcpy(bloco + posicao, buffer, strlen(buffer) * sizeof(char));
+    free(buffer);
     resultado = 1;
     SalvarBloco(bloco, arquivo);
     rewind(arquivo);
-    return resultado;
+  }
+  return resultado;
 }
 
+// EncontrarIndice encontra o primeiro espaço vazio para inserir em um bloco
 int EncontrarIndice(Arquivo arquivo, char *chave, int tamanho_chave) {
-    rewind(arquivo);
-    char bloco[TAMANHO_BLOCO] = {0};
-    int i = 0, j = 0, lidos, numero_bloco = -1;
-    do {
-        lidos = PegarProximoBloco(bloco, arquivo);
-        numero_bloco++;
-        for (int j = 0; j + TAMANHO_REGISTRO <= TAMANHO_BLOCO;
-             j = j + TAMANHO_REGISTRO) {             // Pula de registro em registro
-            for (i = 0; i <= tamanho_chave + 1; i++) { // enquanto houver chave
-                if (chave[i] == 0) {
-                    return j + (numero_bloco * TAMANHO_BLOCO); // Achou
-                }
-                if (bloco[i + j] != chave[i]) { // Não é o registro procurado
-                    break;
-                }
-            }
-        }
-    } while (lidos == TAMANHO_BLOCO);
+  rewind(arquivo);
+  if (chave[0] == '*') // Não é possivel encontrar um registro deletado
     return -1;
-}
-
-Registro DecodificarRegistro(char *texto) {
-    Registro registro;
-    int i, preenchendo = CAMPO_NOME;
-    int tamanho_nome = 0, tamanho_sobrenome = 0;
-    for (i = 0; i < TAMANHO_REGISTRO; i++) {
-        if (texto[i] == '|') {
-            preenchendo++;
-        } else if (preenchendo == CAMPO_NOME) {
-            tamanho_nome++;
-        } else if (preenchendo == CAMPO_SOBRENOME) {
-            if (texto[i] == 0)
-                break;
-            tamanho_sobrenome++;
+  char bloco[TAMANHO_BLOCO] = {0};
+  int i = 0, j = 0, lidos, numero_bloco = -1;
+  do {
+    lidos = PegarProximoBloco(bloco, arquivo);
+    numero_bloco++;
+    for (int j = 0; j + TAMANHO_REGISTRO <= TAMANHO_BLOCO;
+         j = j + TAMANHO_REGISTRO) {             // Pula de registro em registro
+      for (i = 0; i <= tamanho_chave + 1; i++) { // enquanto houver chave
+        if (chave[i] == 0) {
+          return j + (numero_bloco * TAMANHO_BLOCO); // Achou
         }
+        if (bloco[i + j] != chave[i]) { // Não é o registro procurado
+          break;
+        }
+      }
     }
-    registro.Nome = (char *) calloc(tamanho_nome + 1, sizeof(char)); // é uma boa ideia alocar dinamicamente isso?
-    registro.Sobrenome = (char *) calloc(tamanho_sobrenome + 1, sizeof(char));
-    memcpy(registro.Nome, texto, sizeof(char) * tamanho_nome);
-    memcpy(registro.Sobrenome, texto + (sizeof(char) * (tamanho_nome + 1)),
-           sizeof(char) * tamanho_sobrenome);
-    return registro;
+  } while (lidos == TAMANHO_BLOCO);
+  return -1;
+}
+// DecodificarRegistro transforma uma string lida do bloco em uma struct
+// Registro (funciona como uma maquina de estados, onde em cada estado
+// preenche-se um campo da struct Registro)
+Registro DecodificarRegistro(char *texto) {
+  Registro registro;
+  int i, preenchendo = CAMPO_NOME;
+  int tamanho_nome = 0, tamanho_sobrenome = 0;
+  for (i = 0; i < TAMANHO_REGISTRO; i++) {
+    if (texto[i] == '|') {
+      preenchendo++;
+    } else if (preenchendo == CAMPO_NOME) {
+      tamanho_nome++;
+    } else if (preenchendo == CAMPO_SOBRENOME) {
+      if (texto[i] == 0)
+        break;
+      tamanho_sobrenome++;
+    }
+  }
+  registro.Nome = (char *)calloc(
+      tamanho_nome + 1,
+      sizeof(char)); // é uma boa ideia alocar dinamicamente isso?
+  registro.Sobrenome = (char *)calloc(tamanho_sobrenome + 1, sizeof(char));
+  memcpy(registro.Nome, texto, sizeof(char) * tamanho_nome);
+  memcpy(registro.Sobrenome, texto + (sizeof(char) * (tamanho_nome + 1)),
+         sizeof(char) * tamanho_sobrenome);
+  return registro;
 }
 
 Registro BuscaRegistro(Arquivo arquivo, char *chave) {
-    Registro retorno = {NULL, NULL};
-    int local = EncontrarIndice(arquivo, chave, (int) strlen(chave));
-    if (local < 0)
-        return retorno;
+  Registro retorno = {NULL, NULL};
+
+  int local = EncontrarIndice(arquivo, chave, (int)strlen(chave));
+  if (local < 0)
+    return retorno;
+  int numero_bloco = (local / TAMANHO_BLOCO) * TAMANHO_BLOCO;
+  fseek(arquivo, numero_bloco, SEEK_SET);
+  char bloco[TAMANHO_BLOCO] = {0};
+  PegarProximoBloco(bloco, arquivo);
+  int numero_registro = (local % TAMANHO_BLOCO) / TAMANHO_REGISTRO;
+  char texto[TAMANHO_REGISTRO];
+  memcpy(texto, bloco + (numero_registro * TAMANHO_REGISTRO), TAMANHO_REGISTRO);
+  retorno = DecodificarRegistro(texto);
+  return retorno;
+}
+// Marca o registro com o caractere de deletado (*)
+Registro RemoverRegistro(Arquivo arquivo, char *chave) {
+  rewind(arquivo);
+  Registro registro;
+  int local = EncontrarIndice(arquivo, chave, (int)strlen(chave));
+  if (local >= 0) {
     int numero_bloco = (local / TAMANHO_BLOCO) * TAMANHO_BLOCO;
     fseek(arquivo, numero_bloco, SEEK_SET);
     char bloco[TAMANHO_BLOCO] = {0};
     PegarProximoBloco(bloco, arquivo);
-    int numero_registro = (local % TAMANHO_BLOCO) / TAMANHO_REGISTRO;
-    char texto[TAMANHO_REGISTRO];
-    memcpy(texto, bloco + (numero_registro * TAMANHO_REGISTRO), TAMANHO_REGISTRO);
-    retorno = DecodificarRegistro(texto);
-    return retorno;
-}
-
-Registro RemoverRegistro(Arquivo arquivo, char *chave) {
-    rewind(arquivo);
-    Registro registro;
-    int local = EncontrarIndice(arquivo, chave, (int) strlen(chave));
-    if (local >= 0) {
-        int numero_bloco = (local / TAMANHO_BLOCO) * TAMANHO_BLOCO;
-        fseek(arquivo, numero_bloco, SEEK_SET);
-        char bloco[TAMANHO_BLOCO] = {0};
-        PegarProximoBloco(bloco, arquivo);
-        int local_no_bloco = local % TAMANHO_BLOCO;
-        registro = DecodificarRegistro(bloco + local_no_bloco);
-        bloco[local_no_bloco] = '*';
-        SalvarBloco(bloco, arquivo);
-    }
-    return registro;
+    int local_no_bloco = local % TAMANHO_BLOCO;
+    registro = DecodificarRegistro(bloco + local_no_bloco);
+    bloco[local_no_bloco] = '*';
+    SalvarBloco(bloco, arquivo);
+  }
+  return registro;
 }
 
 void RemoverRegistroDaMemoria(Registro r) {
-    free(r.Nome);
-    free(r.Sobrenome);
+  free(r.Nome);
+  free(r.Sobrenome);
 }
-
-
+// Permite listar registros (inclusive os deletados)
 void ListarRegistros(Arquivo arquivo, int imprimir_deletados) {
-    rewind(arquivo);
-    char bloco[TAMANHO_BLOCO] = {0};
-    int n_registro, n_bloco = 0;
-    while (PegarProximoBloco(bloco, arquivo) == TAMANHO_BLOCO) {
-        for (n_registro = 0;
-             n_registro + TAMANHO_REGISTRO < TAMANHO_BLOCO; n_registro = n_registro + TAMANHO_REGISTRO) {
-            if ((*(bloco + n_registro) == '*' && !imprimir_deletados) || *(bloco + n_registro) == 0)
-                continue;
-            Registro atual = DecodificarRegistro(bloco + n_registro);
-            printf("{id=%d,\tnome='%s',\tsobrenome='%s'},\n", n_registro + (n_bloco * TAMANHO_BLOCO), atual.Nome,
-                   atual.Sobrenome);
-            RemoverRegistroDaMemoria(atual);
-        }
-        n_bloco++;
+  rewind(arquivo);
+  char bloco[TAMANHO_BLOCO] = {0};
+  int n_registro, n_bloco = 0;
+  while (PegarProximoBloco(bloco, arquivo) == TAMANHO_BLOCO) {
+    printf("%d : {", n_bloco);
+    for (n_registro = 0; n_registro + TAMANHO_REGISTRO < TAMANHO_BLOCO;
+         n_registro = n_registro + TAMANHO_REGISTRO) {
+      if ((*(bloco + n_registro) == '*' && !imprimir_deletados) ||
+          *(bloco + n_registro) == 0)
+        continue;
+      Registro atual = DecodificarRegistro(bloco + n_registro);
+      printf("\t{id=%-5d,\tnome='%-10s',\tsobrenome='%-25s'},\n",
+             n_registro + (n_bloco * TAMANHO_BLOCO), atual.Nome,
+             atual.Sobrenome);
+      RemoverRegistroDaMemoria(atual);
     }
+    n_bloco++;
+    printf("},\n");
+  }
 }

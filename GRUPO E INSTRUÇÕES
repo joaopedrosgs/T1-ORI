@@ -1,0 +1,8 @@
+Grupo:
+João Pedro São Gregorio Silva, 726549
+Marcelo Huffenbaecher, 725813
+Alisson Hayasi, 726494
+
+Intruções:
+1) Compilar com o gcc: gcc *.c -o main
+2) executar o arquivo compilador: ./main
