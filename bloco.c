@@ -1,7 +1,3 @@
-//
-// Created by pedro on 24/10/17.
-//
-
 #include "bloco.h"
 #include <stdio.h>
 

@@ -1,7 +1,3 @@
-//
-// Created by pedro on 24/10/17.
-//
-
 #include "arquivo.h"
 #include "bloco.h"
 #include "registro.h"
